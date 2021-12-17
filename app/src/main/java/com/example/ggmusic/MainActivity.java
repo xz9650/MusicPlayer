@@ -8,18 +8,50 @@ import android.Manifest;
 import android.content.ContentResolver;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.media.MediaParser;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 
-public class MainActivity extends AppCompatActivity {
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 
+public class MainActivity extends AppCompatActivity
+        implements View.OnClickListener{
+
+
+    private BottomNavigationView navigation;
+    private TextView tvBottomTitle;
+    private TextView tvBottomArtist;
+    private ImageView ivAlbumThumbnail;
     private ContentResolver mContentResolver;
     private ListView mPlaylist;
     private MediaCursorAdapter mCursorAdapter;
     private Cursor mCursor;
+    private ImageView ivPlay;
+    private MediaPlayer mMediaPlayer = null;
+
+    protected void onStart(){
+        super.onStart();
+        if(mMediaPlayer==null){
+            mMediaPlayer = new MediaPlayer();
+        }
+    }
+
+    protected void onStop(){
+        if(mMediaPlayer!=null){
+            mMediaPlayer.stop();
+            mMediaPlayer.release();
+            mMediaPlayer = null;
+            Log.d(TAG,"onStop invoked!");
+        }
+        super.onStop();
+    }
 
     private final int REQUEST_EXTERNAL_STORAGE = 1;
     private static String[] PERMISSIONS_STORAGE ={
@@ -39,10 +71,25 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        navigation = findViewById(R.id.navigation);
+        LayoutInflater.from(MainActivity.this)
+                .inflate(R.layout.bottom_media_toolbar,
+                        navigation,true);
+
+        ivPlay = navigation.findViewById(R.id.iv_play);
         mPlaylist = findViewById(R.id.lv_playlist);
+        tvBottomTitle = navigation.findViewById(R.id.tv_bottom_title);
+        tvBottomArtist = navigation.findViewById(R.id.tv_bottom_artist);
+        ivAlbumThumbnail = navigation.findViewById(R.id.iv_thumbnail);
+
         mContentResolver = getContentResolver();
         mCursorAdapter = new MediaCursorAdapter(MainActivity.this);
         mPlaylist.setAdapter(mCursorAdapter);
+
+        if(ivPlay!=null){
+            ivPlay.setOnClickListener(MainActivity.this);
+        }
+        navigation.setVisibility(View.GONE);
 
         if(ContextCompat.checkSelfPermission(this,
                 Manifest.permission.READ_EXTERNAL_STORAGE
